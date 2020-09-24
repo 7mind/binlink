@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
+#[derive(Debug)]
 pub struct ResolvedConfig {
     pub bins: HashMap<String, String>,
+    pub names: HashSet<String>,
 }
 
-
+#[derive(Debug)]
 pub struct Config {
     pub local: Option<LocalConfig>,
     pub global: Option<GlobalConfig>,
@@ -16,25 +18,28 @@ pub struct Config {
 impl Config {
     pub fn resolve(self) -> ResolvedConfig {
 
-        let globals: HashMap<String, String> = match self.global {
+        let globals: (HashMap<String, String>, HashSet<String>) = match self.global {
             None => {
-                HashMap::new()
+                (HashMap::new(), HashSet::new())
             }
             Some(e) => {
-                e.resolve()
+                (e.resolve(), e.bins.into_iter().map(|b| b.name).collect())
             }
         };
 
-        let locals: HashMap<String, String> = match self.local {
+        let locals: (HashMap<String, String>, HashSet<String>)= match self.local {
             None => {
-                HashMap::new()
+                (HashMap::new(), HashSet::new())
             }
             Some(e) => {
-                e.resolve()
+                (e.resolve(), e.bins.into_iter().map(|b| b.name).collect())
             }
         };
-        let out = globals.into_iter().chain(locals).collect();
-        ResolvedConfig {bins: out }
+        let out = globals.0.into_iter().chain(locals.0).collect();
+        let outN = globals.1.into_iter().chain(locals.1).collect();
+
+
+        ResolvedConfig {bins: out , names: outN}
     }
 }
 

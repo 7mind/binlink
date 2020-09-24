@@ -6,14 +6,15 @@ use std::{
 use std::env;
 use std::ffi::{CString, OsString};
 use std::fs::File;
+use std::os::unix::fs as ufs;
+use std::fs;
 use std::path::PathBuf;
 
 use libc;
 use serde::de::DeserializeOwned;
-
 use cfg::Config;
 
-use crate::cfg::GlobalConfig;
+use crate::cfg::{GlobalConfig, LocalConfig};
 
 mod cfg;
 mod cli;
@@ -83,12 +84,11 @@ fn find_main(name: &str, target: &str) -> String {
 }
 
 fn do_passthrough(config: Config, name: &str) -> () {
-    //let config = config.into_inner();
     let resolved = config.resolve();
+
 
     let bin: String = match resolved.bins.get(name) {
         Some(path) => {
-            println!("resolved!");
             find_main(name, path)
         }
         None => {
@@ -96,11 +96,9 @@ fn do_passthrough(config: Config, name: &str) -> () {
         }
     };
 
-    println!("target: {}", bin);
     let c_str_1 = CString::new(bin.clone()).unwrap();
 
     let args: Vec<String> = env::args().collect();
-    //let args = ; //vec![c_str_1.to_str().unwrap().to_string(), "-c".to_string(), "env".to_string()];
 
     let argv = make_cstring_array(args.clone());
     let envp = make_cstring_array(make_env());
@@ -121,6 +119,7 @@ fn do_passthrough(config: Config, name: &str) -> () {
 
 fn maybe_config(base: Option<PathBuf>, name: &str) -> Option<PathBuf> {
     base.map(|p| p.as_path().join(name)).and_then(|p| {
+
         if p.exists() {
             Some(p.as_path().to_owned())
         } else {
@@ -139,28 +138,12 @@ pub fn parse<T>(path: &Path) -> T
     let mut file = match File::open(&path) {
         Ok(file) => file,
         Err(_)  => {
-            panic!("Could not find config file, using default!");
-            //return Config::new();
+            panic!("Could not find config file!");
         }
     };
 
     file.read_to_string(&mut config_toml)
         .unwrap_or_else(|err| panic!("Error while reading config: [{}]", err));
-
-    // let mut parser = Parser::new(&config_toml);
-    // let toml = parser.parse();
-    //
-    // if toml.is_none() {
-    //     for err in &parser.errors {
-    //         let (loline, locol) = parser.to_linecol(err.lo);
-    //         let (hiline, hicol) = parser.to_linecol(err.hi);
-    //         println!("{}:{}:{}-{}:{} error: {}",
-    //                  path.display(), loline, locol, hiline, hicol, err.desc);
-    //     }
-    //     panic!("Exiting server");
-    // }
-    //
-    // let config = toml::Value::Table(toml.unwrap());
 
     match toml::from_str(config_toml.as_str()) {
         Ok(t) => t,
@@ -170,40 +153,30 @@ pub fn parse<T>(path: &Path) -> T
 
 fn main() {
 
-    let home = dirs::home_dir().map(|h| h.join(".config").join("binlink"));
-    // println!("home: {:#?}", home.clone());
-    //
-
-
 
     let localconfig = maybe_config(std::env::current_dir().ok(), ".binlink.toml");
+
+    let home = dirs::home_dir().map(|h| h.join(".config").join("binlink"));
     let baseconfig = maybe_config(home, "binlink.toml");
 
-    // let parsed_local: Option<LocalConfig> = match localconfig {
-    //     Some(c) => {
-    //         Some(parse(c.as_path()))
-    //     }
-    //     None => {None}
-    // };
-    //
-    // let parsed_global: Option<GlobalConfig> = match baseconfig {
-    //     Some(c) => {
-    //         println!("base config: {}", c.display());
-    //         Some(parse(c.as_path()))
-    //     }
-    //     None => {None}
-    // };
-
-    // let config = Config {
-    //     local: parsed_local,
-    //     global: parsed_global,
-    // };
-
-    let config = Config {
-        local: None,
-        global: Some(GlobalConfig::example()),
+    let parsed_local: Option<LocalConfig> = match localconfig {
+        Some(c) => {
+            Some(parse(c.as_path()))
+        }
+        None => {None}
     };
 
+    let parsed_global: Option<GlobalConfig> = match baseconfig {
+        Some(c) => {
+            Some(parse(c.as_path()))
+        }
+        None => {Some(GlobalConfig::example())}
+    };
+
+    let config = Config {
+        local: parsed_local,
+        global: parsed_global,
+    };
 
     let bin_path = std::env::current_exe()
         .map(|exe|
@@ -211,18 +184,43 @@ fn main() {
                 .map(OsString::from)
                 .and_then(|s| s.to_str().map(|s| s.to_owned()))
         );
+    let full_bin_path = std::env::current_exe();
 
 
 
-    match bin_path.map(|e| e.map(|s| s)) {
-        Ok(Some(e)) => {
+    match (bin_path, full_bin_path) {
+        (Ok(Some(e)), Ok(p)) => {
             match e.as_str() {
                 "binlink" => {
                     let opts = cli::Args::defn();
                     match opts.subcommand_name() {
                         Some("link") => {
+                            let dir = "/usr/local/bin/binlink";
+                            match fs::create_dir_all(dir) {
+                                Ok(_) => {
+                                    println!("created: {}", dir);
+                                }
+                                Err(e) => {
+                                    println!("cannot create {}: {:#?}", dir, e);
+                                }
+                            }
                             let resolved = config.resolve();
-                            resolved.bins.iter().for_each(|(k, _)| println!("{}", k))
+                            resolved.names.iter().for_each(|k| {
+                                let target = Path::new(dir).join(Path::new(k));
+                                match fs::remove_file(&target) {
+                                    _ => {}
+                                }
+
+                                let bin = Path::new(&p);
+                                match ufs::symlink(&bin, &target) {
+                                    Ok(_) => {
+                                        println!("Created: {:#?} -> {:#?}", &target, &bin);
+                                    }
+                                    Err(e) => {
+                                        panic!(format!("cannot symlink {}: {:#?}", k, e));
+                                    }
+                                }
+                            })
                         },
                         Some("example") => {
                             let example = GlobalConfig::example();

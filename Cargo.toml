@@ -15,7 +15,6 @@ exitfailure = "0.5.1"
 
 which = "4.0.2"
 dirs = "3.0.1"
-symlink = "0.1.0"
 
 libc = "0.2"
 
