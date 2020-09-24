@@ -151,9 +151,7 @@ pub fn parse<T>(path: &Path) -> T
     }
 }
 
-fn main() {
-
-
+fn get_config() -> Config {
     let localconfig = maybe_config(std::env::current_dir().ok(), ".binlink.toml");
 
     let home = dirs::home_dir().map(|h| h.join(".config").join("binlink"));
@@ -177,7 +175,10 @@ fn main() {
         local: parsed_local,
         global: parsed_global,
     };
+    config
+}
 
+fn main() {
     let bin_path = std::env::current_exe()
         .map(|exe|
             exe.file_name()
@@ -185,8 +186,6 @@ fn main() {
                 .and_then(|s| s.to_str().map(|s| s.to_owned()))
         );
     let full_bin_path = std::env::current_exe();
-
-
 
     match (bin_path, full_bin_path) {
         (Ok(Some(e)), Ok(p)) => {
@@ -204,6 +203,7 @@ fn main() {
                                     println!("cannot create {}: {:#?}", dir, e);
                                 }
                             }
+                            let config = get_config();
                             let resolved = config.resolve();
                             resolved.names.iter().for_each(|k| {
                                 let target = Path::new(dir).join(Path::new(k));
@@ -237,6 +237,7 @@ fn main() {
                     }
                 }
                 o => {
+                    let config = get_config();
                     do_passthrough(config, o);
                 }
             }

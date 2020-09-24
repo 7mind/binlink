@@ -14,10 +14,8 @@ pub struct Config {
 }
 
 
-
 impl Config {
     pub fn resolve(self) -> ResolvedConfig {
-
         let globals: (HashMap<String, String>, HashSet<String>) = match self.global {
             None => {
                 (HashMap::new(), HashSet::new())
@@ -27,7 +25,7 @@ impl Config {
             }
         };
 
-        let locals: (HashMap<String, String>, HashSet<String>)= match self.local {
+        let locals: (HashMap<String, String>, HashSet<String>) = match self.local {
             None => {
                 (HashMap::new(), HashSet::new())
             }
@@ -39,17 +37,25 @@ impl Config {
         let outN = globals.1.into_iter().chain(locals.1).collect();
 
 
-        ResolvedConfig {bins: out , names: outN}
+        ResolvedConfig { bins: out, names: outN }
     }
 }
 
 trait AbstractConfig {
-    fn bins(&self) -> &Vec<LinkedBinary> ;
+    fn bins(&self) -> &Vec<LinkedBinary>;
     fn kits(&self) -> &Vec<KitConfig>;
     fn paths(&self) -> &Vec<KitPath>;
 
     fn resolve(&self) -> HashMap<String, String> {
-        let paths: HashMap<String, String> = self.paths().iter().map(|p| (String::from(&p.id), String::from(&p.path))).collect();
+        let paths: HashMap<String, String> = self.paths().iter().map(|p| {
+            let dir = match &p.target {
+                SdkTarget::Dir { path } => {
+                    String::from(path)
+                }
+            };
+
+            (String::from(&p.id), dir)
+        }).collect();
 
         let kits: HashMap<String, String> = self.kits().iter().flat_map(|kit| {
             match paths.get(kit.id.as_str()) {
@@ -60,13 +66,12 @@ trait AbstractConfig {
                     Vec::new()
                 }
             }
-
         }).collect();
 
 
         let bins: HashMap<String, String> = self.bins().iter().flat_map(|bin| {
             match &bin.target {
-                LinkTarget::Sdk {name} => {
+                LinkTarget::Sdk { name } => {
                     match kits.get(name.as_str()) {
                         Some(path) => {
                             [(String::from(&bin.name), String::from(path))].to_vec()
@@ -80,9 +85,6 @@ trait AbstractConfig {
                     Vec::new()
                 }
             }
-
-
-
         }).collect();
 
         bins
@@ -104,7 +106,7 @@ impl AbstractConfig for LocalConfig {
 }
 
 impl AbstractConfig for GlobalConfig {
-    fn bins(&self) -> &Vec<LinkedBinary>  {
+    fn bins(&self) -> &Vec<LinkedBinary> {
         &self.bins
     }
 
@@ -151,9 +153,15 @@ pub struct KitConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "type")]
+pub enum SdkTarget {
+    Dir { path: String },
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct KitPath {
     pub id: String,
-    pub path: String,
+    pub target: SdkTarget,
 }
 
 impl LocalConfig {
@@ -240,16 +248,17 @@ impl GlobalConfig {
         ]
             .concat();
 
-        let bins = bins.into_iter().map(|(name, sdk)| LinkedBinary {name: name, target: LinkTarget::Sdk {name: sdk}} ).collect();
+        let bins = bins.into_iter().map(|(name, sdk)| LinkedBinary { name: name, target: LinkTarget::Sdk { name: sdk } }).collect();
+
 
         let example = GlobalConfig {
             bins: bins,
             kits: vec![
-                KitConfig {name: String::from("jdk"), id: String::from("graalvm") },
-                KitConfig {name: String::from("jdk-graal"), id: String::from("graalvm") },
+                KitConfig { name: String::from("jdk"), id: String::from("graalvm") },
+                KitConfig { name: String::from("jdk-graal"), id: String::from("graalvm") },
             ],
-            paths: vec! [
-                KitPath {id: String::from("graalvm"), path: String::from("/Library/Java/JavaVirtualMachines/graalvm-ce-java11-20.2.0/Contents/Home/bin/") },
+            paths: vec![
+                KitPath { id: String::from("graalvm"), target: SdkTarget::Dir { path: String::from("/Library/Java/JavaVirtualMachines/graalvm-ce-java11-20.2.0/Contents/Home/bin/") } },
             ],
         };
         return example;
