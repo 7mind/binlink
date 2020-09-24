@@ -195,7 +195,7 @@ fn main() {
                     let opts = cli::Args::defn();
                     match opts.subcommand_name() {
                         Some("link") => {
-                            let dir = "/usr/local/bin/binlink";
+                            let dir = "/usr/local/bin/binlinks";
                             match fs::create_dir_all(dir) {
                                 Ok(_) => {
                                     println!("created: {}", dir);
