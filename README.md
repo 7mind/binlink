@@ -4,6 +4,13 @@ Allows you to link binaries (like `java`) within a directory to expected version
 
 **Warning: this is a work-in-progress project**
 
+## Why?
+
+1. Other binary dependency managers (`jenv`, `sdkman`) rely on `PATH` mangling and need to be integrated with your shell thus need to be configured separatedly and work differently when you run your scripts/projects different ways.
+2. GraalVM overrides some binaries (like `node`) and it's hard to fix that.
+
+`binlink` does not rely on shell-level `PATH` mangling. It maintains a list of symlinks to itself and uses `execve` in order to substitue itself with an appropriate binary. That makes it shell-independent.
+
 ## TLDR
 
 ```bash
