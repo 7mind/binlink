@@ -66,9 +66,13 @@ trait AbstractConfig {
                         }).collect();
 
                     let max = candidates.iter().max()
-                        .expect(&format!("cannot find best candidate: {:#?}", candidates));
+                        .expect(&format!("cannot find best candidate: {:#?}", candidates))
+                        .to_str().expect(&format!("cannot convert to string: {:#?}", candidates));
 
-                    format!("{:#?}/{}", max, path)
+
+
+                    let out = format!("{}/{}", max, path);
+                    out
                 }
             };
 
