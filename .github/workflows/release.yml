@@ -43,7 +43,6 @@ jobs:
           formula-name: binlink
           homebrew-tap: 7mind/homebrew-tools
           base-branch: master
-          download-url: https://github.com/7mind/binlink/releases/download/{{ version }}/binlink-macos-amd64.zip
           commit-message: {{formulaName}} {{version}}
         env:
           COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
