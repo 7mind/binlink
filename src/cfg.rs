@@ -190,6 +190,29 @@ impl LocalConfig {
         return asvec;
     }
 
+    pub fn sbt_bins() -> Vec<String> {
+        let out = vec![
+            "sbt",
+        ];
+
+        let asvec = out.iter().map(|b| String::from(*b)).collect();
+        return asvec;
+    }
+
+    pub fn scala_bins() -> Vec<String> {
+        let out = vec![
+            "fsc",
+            "scala",
+            "scalac",
+            "scaladoc",
+            "scalap",
+        ];
+
+        let asvec = out.iter().map(|b| String::from(*b)).collect();
+        return asvec;
+    }
+
+
     pub fn jdk_bins() -> Vec<String> {
         let out = vec![
             "jar",
@@ -245,6 +268,8 @@ impl GlobalConfig {
             LocalConfig::graal_bins().iter().map(|bin| (String::from(bin), String::from("jdk-graal"))).collect::<Vec<(String, String)>>(),
             LocalConfig::jdk_bins().iter().map(|bin| (String::from(bin), String::from("jdk"))).collect::<Vec<(String, String)>>(),
             LocalConfig::node_bins().iter().map(|bin| (String::from(bin), String::from("node"))).collect::<Vec<(String, String)>>(),
+            LocalConfig::scala_bins().iter().map(|bin| (String::from(bin), String::from("scala"))).collect::<Vec<(String, String)>>(),
+            LocalConfig::sbt_bins().iter().map(|bin| (String::from(bin), String::from("sbt"))).collect::<Vec<(String, String)>>(),
         ]
             .concat();
 

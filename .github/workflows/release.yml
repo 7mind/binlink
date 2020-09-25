@@ -25,10 +25,16 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build
         run: cargo build --verbose --release
+      - name: Archive Release
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: target/${{ matrix.asset_name }}.zip
+          directory: target/release
+          exclusions: '.fingerprint build/* deps/* examples/* incremental/*'
       - name: zip
         uses: montudor/action-zip@v0.1.0
         with:
-          args: zip target/${{ matrix.asset_name }}.zip target/release/${{ matrix.artifact_name }}
+          args: zip  target/release/${{ matrix.artifact_name }}
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
