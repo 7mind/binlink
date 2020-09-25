@@ -106,17 +106,20 @@ fn do_passthrough(config: Config, name: &str) -> () {
 
     let mut f = BufReader::new(File::open(bin.clone()).expect("open failed"));
     let mut first_line = String::new();
-    f.read_line(&mut first_line);
+    f.read_line(&mut first_line).expect("cannot check file type");
 
-    let sbBin = if (first_line.starts_with("#!")) {
-        String::from("/bin/sh")
+    let env_args: Vec<String> = env::args().collect();
+    let (_, just_args) = env_args.split_at(1);
+    let just_args_vec = just_args.to_vec();
+
+    let (sb_bin, args) = if first_line.starts_with("#!") {
+        (String::from("/bin/sh"), vec![vec![String::from("/bin/sh"), bin], just_args_vec].into_iter().flatten().collect())
     } else {
-        bin
+        (bin, just_args_vec)
     };
 
-    let c_str_1 = CString::new(sbBin.clone()).unwrap();
+    let c_str_1 = CString::new(sb_bin.clone()).unwrap();
 
-    let args: Vec<String> = env::args().collect();
 
     let argv = make_cstring_array(args.clone());
     let envp = make_cstring_array(make_env());
@@ -130,7 +133,7 @@ fn do_passthrough(config: Config, name: &str) -> () {
             panic!("Impossible: Launcher continued after successful execve")
         }
         c => {
-            panic!(format!("execve failed with code {}; command: `{} {}`", c, sbBin, args.join(" ")))
+            panic!(format!("execve failed with code {}; command: `{} {}`", c, sb_bin, args.join(" ")))
         }
     }
 }

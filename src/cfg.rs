@@ -34,10 +34,10 @@ impl Config {
             }
         };
         let out = globals.0.into_iter().chain(locals.0).collect();
-        let outN = globals.1.into_iter().chain(locals.1).collect();
+        let out_n = globals.1.into_iter().chain(locals.1).collect();
 
 
-        ResolvedConfig { bins: out, names: outN }
+        ResolvedConfig { bins: out, names: out_n }
     }
 }
 
@@ -252,14 +252,14 @@ impl LocalConfig {
         return out.iter().map(|b| String::from(*b)).collect();
     }
 
-    pub fn example() -> LocalConfig {
-        let example = LocalConfig {
-            bins: vec![],
-            kits: vec![],
-            paths: vec![],
-        };
-        return example;
-    }
+    // pub fn example() -> LocalConfig {
+    //     let example = LocalConfig {
+    //         bins: vec![],
+    //         kits: vec![],
+    //         paths: vec![],
+    //     };
+    //     return example;
+    // }
 }
 
 impl GlobalConfig {
