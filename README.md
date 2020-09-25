@@ -32,3 +32,9 @@ nano .binlink.toml
 default config path is `~/.config/binlink/binlink.toml`. 
 
 Local config would always work as overlay.
+
+## See also
+
+- https://github.com/shyiko/jabba
+- https://github.com/jenv/jenv
+- https://github.com/sdkman/sdkman-cli
