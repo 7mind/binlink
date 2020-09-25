@@ -53,7 +53,14 @@ fn make_env() -> Vec<String> {
 }
 
 fn find_fallback(name: &str) -> String {
-    let result = which::which(name);
+    let cwd = env::current_dir().expect("cannot get cwd");
+
+    let path= env::var_os("PATH").map(|p| {
+        let split = env::split_paths(&p);
+        env::join_paths(split.filter(|p| !p.to_str().expect("???").contains("binlinks"))).expect("???")
+    });
+
+    let result = which::which_in(name, path, &cwd);
     match result {
         Ok(bin) => {
             match bin.to_str() {
