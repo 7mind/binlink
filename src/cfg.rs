@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::fs::DirEntry;
 
 #[derive(Debug)]
 pub struct ResolvedConfig {
@@ -51,6 +52,23 @@ trait AbstractConfig {
             let dir = match &p.target {
                 SdkTarget::Dir { path } => {
                     String::from(path)
+                }
+                SdkTarget::HighestPrefix { base, prefix, path } => {
+                    let candidates: Vec<std::path::PathBuf> = std::fs::read_dir(base).expect(&format!("cannot read {:#?}", base))
+                        .map(|d| {
+                            d.expect(&format!("cannot extract path from {:#?}", "???")).path()
+                        })
+                        .filter(|e| {
+                            e
+                                .file_name().expect(&format!("cannot extract name from {:#?}", e)).
+                                to_str().expect(&format!("cannot convert file name: {:#?}", e))
+                                .starts_with(prefix)
+                        }).collect();
+
+                    let max = candidates.iter().max()
+                        .expect(&format!("cannot find best candidate: {:#?}", candidates));
+
+                    format!("{:#?}/{}", max, path)
                 }
             };
 
@@ -156,6 +174,7 @@ pub struct KitConfig {
 #[serde(tag = "type")]
 pub enum SdkTarget {
     Dir { path: String },
+    HighestPrefix { base: String, prefix: String, path: String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -283,7 +302,15 @@ impl GlobalConfig {
                 KitConfig { name: String::from("jdk-graal"), id: String::from("graalvm") },
             ],
             paths: vec![
-                KitPath { id: String::from("graalvm"), target: SdkTarget::Dir { path: String::from("/Library/Java/JavaVirtualMachines/graalvm-ce-java11-20.2.0/Contents/Home/bin/") } },
+                //KitPath { id: String::from("graalvm"), target: SdkTarget::Dir { path: String::from("/Library/Java/JavaVirtualMachines/graalvm-ce-java11-20.2.0/Contents/Home/bin/") } },
+                KitPath {
+                    id: String::from("graalvm"),
+                    target: SdkTarget::HighestPrefix {
+                        base: String::from("/Library/Java/JavaVirtualMachines/"),
+                        prefix: String::from("graalvm-ce-java11"),
+                        path: String::from("Contents/Home/bin/"),
+                    },
+                },
             ],
         };
         return example;

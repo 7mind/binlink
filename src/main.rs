@@ -105,17 +105,18 @@ fn do_passthrough(config: Config, name: &str) -> () {
     };
 
     let mut f = BufReader::new(File::open(bin.clone()).expect("open failed"));
-    let mut first_line = String::new();
-    f.read_line(&mut first_line).expect("cannot check file type");
+    let mut buffer = [0; 2];
+    f.read_exact(&mut buffer).expect("cannot check file type");
+    let has_shebang = buffer[0] == '#' as u8 && buffer[1] == '!' as u8;
 
     let env_args: Vec<String> = env::args().collect();
     let (_, just_args) = env_args.split_at(1);
     let just_args_vec = just_args.to_vec();
 
-    let (sb_bin, args) = if first_line.starts_with("#!") {
+    let (sb_bin, args): (String, Vec<String>) = if has_shebang {
         (String::from("/bin/sh"), vec![vec![String::from("/bin/sh"), bin], just_args_vec].into_iter().flatten().collect())
     } else {
-        (bin, just_args_vec)
+        (bin.clone(), vec![vec![bin], just_args_vec].into_iter().flatten().collect())
     };
 
     let c_str_1 = CString::new(sb_bin.clone()).unwrap();
