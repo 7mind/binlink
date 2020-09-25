@@ -1,3 +1,5 @@
+![Release](https://github.com/7mind/binlink/workflows/Release/badge.svg)
+
 # binlink
 
 Allows you to link binaries (like `java`) within a directory to expected versions.   
