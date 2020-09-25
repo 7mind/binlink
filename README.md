@@ -1,4 +1,4 @@
-![Release](https://github.com/7mind/binlink/workflows/Release/badge.svg)
+![Test](https://github.com/7mind/binlink/workflows/Test/badge.svg) ![Release](https://github.com/7mind/binlink/workflows/Release/badge.svg)
 
 # binlink
 
