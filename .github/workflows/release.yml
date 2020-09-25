@@ -17,10 +17,9 @@ jobs:
           - os: macos-latest
             artifact_name: binlink
             asset_name: binlink-macos-amd64
-#          - os: ubuntu-latest
-#            artifact_name: binlink
-#            asset_name: binlink-linux-amd64
-
+          - os: ubuntu-latest
+            artifact_name: binlink
+            asset_name: binlink-linux-amd64
     steps:
       - uses: actions/checkout@v2
       - name: Build
@@ -46,5 +45,5 @@ jobs:
           base-branch: master
           commit-message: "{{formulaName}} {{version}}"
         env:
-          #COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
