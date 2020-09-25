@@ -43,7 +43,7 @@ jobs:
           formula-name: binlink
           homebrew-tap: 7mind/homebrew-tools
           base-branch: master
-          commit-message: {{formulaName}} {{version}}
+          commit-message: "{{formulaName}} {{version}}"
         env:
           COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
           # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
