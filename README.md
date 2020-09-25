@@ -4,7 +4,7 @@
 
 Allows you to link binaries (like `java`) within a directory to expected versions.   
 
-**Warning: this is a work-in-progress project**
+**Warning: this is a work-in-progress project, user experience may be a bit unpleasant for now**
 
 ## Why?
 
