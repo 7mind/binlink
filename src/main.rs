@@ -15,6 +15,7 @@ use serde::de::DeserializeOwned;
 use cfg::Config;
 
 use crate::cfg::{GlobalConfig, LocalConfig};
+use std::io::{BufReader, BufRead};
 
 mod cfg;
 mod cli;
@@ -96,7 +97,17 @@ fn do_passthrough(config: Config, name: &str) -> () {
         }
     };
 
-    let c_str_1 = CString::new(bin.clone()).unwrap();
+    let mut f = BufReader::new(File::open(bin.clone()).expect("open failed"));
+    let mut first_line = String::new();
+    f.read_line(&mut first_line);
+
+    let sbBin = if (first_line.starts_with("#!")) {
+        String::from("/bin/sh")
+    } else {
+        bin
+    };
+
+    let c_str_1 = CString::new(sbBin.clone()).unwrap();
 
     let args: Vec<String> = env::args().collect();
 
@@ -112,7 +123,7 @@ fn do_passthrough(config: Config, name: &str) -> () {
             panic!("Impossible: Launcher continued after successful execve")
         }
         c => {
-            panic!(format!("execve failed with code {}; command: `{} {}`", c, bin, args.join(" ")))
+            panic!(format!("execve failed with code {}; command: `{} {}`", c, sbBin, args.join(" ")))
         }
     }
 }
