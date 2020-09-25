@@ -37,12 +37,17 @@ jobs:
           file: target/${{ matrix.asset_name }}.zip
           asset_name: ${{ matrix.asset_name }}.zip
           tag: ${{ github.ref }}
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        shell: bash
       - uses: mislav/bump-homebrew-formula-action@v1
         if: ${{ matrix.os == 'macos-latest' }}
         with:
           formula-name: binlink
           homebrew-tap: 7mind/homebrew-tools
           base-branch: master
+          download-url: https://github.com/7mind/binlink/releases/download/${{ steps.get_version.outputs.VERSION }}/binlink-macos-amd64.zip
           commit-message: "{{formulaName}} {{version}}"
         env:
           COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
