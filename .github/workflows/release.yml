@@ -38,3 +38,13 @@ jobs:
           file: target/${{ matrix.asset_name }}.zip
           asset_name: ${{ matrix.asset_name }}.zip
           tag: ${{ github.ref }}
+      - uses: mislav/bump-homebrew-formula-action@v1
+        with:
+          formula-name: binlink
+          homebrew-tap: 7mind/homebrew-tools
+          base-branch: master
+          download-url: https://github.com/7mind/binlink/releases/download/{{ version }}/binlink-macos-amd64.zip
+          commit-message: {{formulaName}} {{version}}
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
