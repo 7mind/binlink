@@ -16,7 +16,9 @@ Allows you to link binaries (like `java`) within a directory to expected version
 ## TLDR
 
 ```bash
-cp binlink /usr/local/bin
+brew tap 7mind/tools
+brew install binlink
+
 binlink link
 echo 'PATH=/usr/local/bin/binlinks/:${PATH}' >> ~/.zshrc
 ```
