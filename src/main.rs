@@ -1,7 +1,6 @@
 use std::{
     io::{Read},
     path::Path,
-
 };
 use std::env;
 use std::ffi::{CString, OsString};
@@ -21,6 +20,8 @@ mod cfg;
 mod cli;
 mod dl;
 
+use toml_edit::{Document, value, Value, Table, ArrayOfTables, Item, InlineTable};
+use toml::value::Array;
 
 struct UnsafeStrVec {
     base: Vec<CString>,
@@ -55,7 +56,7 @@ fn make_env() -> Vec<String> {
 fn find_fallback(name: &str) -> String {
     let cwd = env::current_dir().expect("cannot get cwd");
 
-    let path= env::var_os("PATH").map(|p| {
+    let path = env::var_os("PATH").map(|p| {
         let split = env::split_paths(&p);
         env::join_paths(split.filter(|p| !p.to_str().expect("???").contains("binlinks"))).expect("???")
     });
@@ -141,7 +142,6 @@ fn do_passthrough(config: Config, name: &str) -> () {
 
 fn maybe_config(base: Option<PathBuf>, name: &str) -> Option<PathBuf> {
     base.map(|p| p.as_path().join(name)).and_then(|p| {
-
         if p.exists() {
             Some(p.as_path().to_owned())
         } else {
@@ -159,7 +159,7 @@ pub fn parse<T>(path: &Path) -> T
 
     let mut file = match File::open(&path) {
         Ok(file) => file,
-        Err(_)  => {
+        Err(_) => {
             panic!("Could not find config file!");
         }
     };
@@ -183,14 +183,14 @@ fn get_config() -> Config {
         Some(c) => {
             Some(parse(c.as_path()))
         }
-        None => {None}
+        None => { None }
     };
 
     let parsed_global: Option<GlobalConfig> = match baseconfig {
         Some(c) => {
             Some(parse(c.as_path()))
         }
-        None => {Some(GlobalConfig::example())}
+        None => { Some(GlobalConfig::example()) }
     };
 
     let config = Config {
@@ -243,18 +243,30 @@ fn main() {
                                     }
                                 }
                             })
-                        },
+                        }
                         Some("example") => {
                             let example = GlobalConfig::example();
+
                             match toml::to_string_pretty(&example) {
                                 Ok(tout) => {
-                                    println!("{}", tout);
+                                    let mut doc = tout.parse::<Document>().expect("invalid doc");
+
+                                    {
+                                        let bins_arr = doc["bins"].as_array_of_tables_mut().expect("xxx");
+                                        make_inline_tbls(bins_arr)
+                                    }
+
+                                    {
+                                        let paths_arr = doc["paths"].as_array_of_tables_mut().expect("xxx");
+                                        make_inline_tbls(paths_arr)
+                                    }
+                                    println!("{}", doc.to_string());
                                 }
                                 Err(e) => {
                                     panic!(format!("error: {:#?}", e));
                                 }
                             }
-                        },
+                        }
                         _ => panic!("Control endpoint is not implemented yet"),
                     }
                 }
@@ -274,4 +286,27 @@ fn main() {
     //     Ok(v) => println!("ok: {:?}", v),
     //     Err(e) => println!("error: {:?}", e),
     // }
+}
+
+fn make_inline_tbls(paths_arr: &mut ArrayOfTables) {
+    for x in (0..paths_arr.len()) {
+        let sub = paths_arr.get_mut(x).expect("");
+        let tgt_raw = sub.entry("target");
+
+        tgt_raw.as_inline_table_mut().map(|e| e.fmt());
+        let tgt_table = tgt_raw.as_table().expect("");
+        let mut tgt_inline = InlineTable::default();
+        tgt_table.iter().for_each(|i| {
+            let key = i.0;
+            let value = i.1.as_value().expect("").to_owned();
+            tgt_inline.get_or_insert(key, value);
+        });
+        tgt_inline.fmt();
+
+
+        let mut tgt_val = Value::InlineTable(tgt_inline);
+        let tgt_item = Item::Value(tgt_val);
+        *tgt_raw = tgt_item;
+
+    }
 }
