@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::fs::DirEntry;
+
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct ResolvedConfig {
