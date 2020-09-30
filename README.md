@@ -2,7 +2,7 @@
 
 # binlink
 
-Allows you to link binaries (like `java`) within a directory to expected versions.   
+Allows to create per-directory overrides for your toolchain binaries of expected versions. E.g. you may say that `java` should point to `AdoptOpenJDK 11` when invoked in directory `~/work/my-project`.
 
 **Warning: this is a work-in-progress project, user experience may be a bit unpleasant for now**
 
