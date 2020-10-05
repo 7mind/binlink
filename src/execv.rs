@@ -33,10 +33,13 @@ pub fn do_passthrough(config: Config, name: &str) -> () {
     let just_args_vec = just_args.to_vec();
 
     let (sb_bin, args): (String, Vec<String>) = if has_shebang {
-        (String::from("/bin/sh"), vec![vec![String::from("/bin/sh"), bin], just_args_vec].into_iter().flatten().collect())
+        let cmd: Vec<String> = vec![vec![bin], just_args_vec].into_iter().flatten().collect();
+        (String::from("/bin/sh"), vec![vec![String::from("/bin/sh"), String::from("-c"), cmd.join(" ")]].into_iter().flatten().collect())
     } else {
         (bin.clone(), vec![vec![bin], just_args_vec].into_iter().flatten().collect())
     };
+
+    //println!("{} {:#?}", sb_bin, args);
 
     let c_str_1 = CString::new(sb_bin.clone()).unwrap();
 
