@@ -8,8 +8,12 @@ use std::os::unix::fs as ufs;
 use toml_edit::{ArrayOfTables, Document, InlineTable, value, Value};
 
 
-use crate::cfg::GlobalConfig;
 use std::path::PathBuf;
+use std::env;
+use env_logger::Builder;
+use log;
+
+use crate::cfg::GlobalConfig;
 
 mod cfg;
 mod cfgreader;
@@ -17,7 +21,12 @@ mod cli;
 mod dl;
 mod execv;
 
+
 fn main() {
+    Builder::new()
+        .parse_filters(&env::var("BINLINK_LOG").unwrap_or_default())
+        .init();
+
     let bin_path = std::env::current_exe()
         .map(|exe|
             exe.file_name()
@@ -25,6 +34,8 @@ fn main() {
                 .and_then(|s| s.to_str().map(|s| s.to_owned()))
         );
     let full_bin_path = std::env::current_exe();
+
+    log::debug!("binlink: self={:#?}, path={:#?}", bin_path, full_bin_path);
 
     match (bin_path, full_bin_path) {
         (Ok(Some(e)), Ok(p)) => {

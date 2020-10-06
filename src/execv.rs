@@ -10,18 +10,23 @@ use libc;
 use crate::cfg::Config;
 
 
+
 pub fn do_passthrough(config: Config, name: &str) -> () {
     let resolved = config.resolve();
 
 
     let bin: String = match resolved.bins.get(name) {
         Some(path) => {
+            log::debug!("{} is configured: {}", name, path);
             find_main(name, path)
         }
         None => {
+            log::debug!("{} not configured, matching on $PATH", name);
             find_fallback(name)
         }
     };
+
+    log::info!("{} resolved as {}", name, bin);
 
     let mut f = BufReader::new(File::open(bin.clone()).expect("open failed"));
     let mut buffer = [0; 2];
@@ -39,10 +44,9 @@ pub fn do_passthrough(config: Config, name: &str) -> () {
         (bin.clone(), vec![vec![bin], just_args_vec].into_iter().flatten().collect())
     };
 
-    //println!("{} {:#?}", sb_bin, args);
+    log::info!("about to run: {}, argv: {:#?}", sb_bin, args);
 
     let c_str_1 = CString::new(sb_bin.clone()).unwrap();
-
 
     let argv = make_cstring_array(args.clone());
     let envp = make_cstring_array(make_env());
