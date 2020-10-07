@@ -10,7 +10,6 @@ use libc;
 use crate::cfg::Config;
 
 
-
 pub fn do_passthrough(config: Config, name: &str) -> () {
     let resolved = config.resolve();
 
@@ -38,7 +37,7 @@ pub fn do_passthrough(config: Config, name: &str) -> () {
     let just_args_vec = just_args.to_vec();
 
     let (sb_bin, args): (String, Vec<String>) = if has_shebang {
-        let cmd: Vec<String> = vec![vec![bin], just_args_vec].into_iter().flatten().collect();
+        let cmd: Vec<String> = vec![vec![bin], just_args_vec].into_iter().flatten().map(|s| format!("'{}'", s)).collect();
         (String::from("/bin/sh"), vec![vec![String::from("/bin/sh"), String::from("-c"), cmd.join(" ")]].into_iter().flatten().collect())
     } else {
         (bin.clone(), vec![vec![bin], just_args_vec].into_iter().flatten().collect())
